@@ -111,29 +111,22 @@ sudo systemctl restart kubelet
 
 ---
 
-## Step 4: Initialize Master Node
+## Step 4: Initialize Master Node and Install Calico CNI Plugin
 Run these commands **only on `k8s-master`**.
 
 ```bash
 sudo kubeadm config images pull
+
 sudo kubeadm init
-```
 
-### Configure kubectl
-```bash
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
+ mkdir -p "$HOME"/.kube
+ sudo cp -i /etc/kubernetes/admin.conf "$HOME"/.kube/config
+ sudo chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
 
-### Install Calico CNI Plugin
-```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
-```
+ # Network Plugin = calico
+ kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
 
-### Generate Join Command for Worker Nodes
-```bash
-kubeadm token create --print-join-command
+ 
 ```
 Ensure **port 6443** is open in the security group to allow worker nodes to connect.
 
