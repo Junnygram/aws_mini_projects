@@ -156,7 +156,12 @@ kubectl get nodes
 ```bash
 kubectl create deployment k8s-app --image=junny27/hello-k8s  
 kubectl expose deployment k8s-app --type=NodePort --port=80  
-kubectl get svc k8s-app  
+kubectl get svc k8s-app
+kubectl get pods
+kubectl scale deployment k8s-app --replicas=3
+kubectl get pods -o wide
+kubectl get svc k8s-app -o yaml
+kubectl describe svc k8s-app
 ```
 
 Find the **NodePort**, then access the service via:  
