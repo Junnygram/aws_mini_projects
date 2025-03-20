@@ -3,6 +3,12 @@
 This guide outlines the steps to set up a Kubernetes cluster using kubeadm on AWS EC2 instances.
 
 ---
+Resources
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm
+
+https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises
+---
 
 ## Prerequisites
 - **Ubuntu 22.04 (or later)** on EC2 instances
