@@ -174,26 +174,36 @@ kubectl get nodes
 ```bash
 kubectl create deployment nginx --image=nginx  
 kubectl create svc nodeport nginx --tcp=80:80  
+kubectl get svc
+kubectl describe deployment <deploymentname>
+kubectl scale deployment nginx --replica=3
 
 ```
+
+Edit inbound rule and Find the **NodePort**, then access the service via:  
+```bash
+http://<master-node-public-ip>:<NodePort>
+```
+
+This is the imperative way, now lets go through the declarative way
 
 ```bash
-kubectl create deployment k8s-app --image=junny27/hello-k8s  
-kubectl expose deployment k8s-app --type=NodePort --port=80  
-kubectl get svc k8s-app
-kubectl get pods
-kubectl scale deployment k8s-app --replicas=3
-kubectl get pods -o wide
-kubectl get svc k8s-app -o yaml
-kubectl describe svc k8s-app
+kubectl delete all --all
+kubectl create deployment k8s --image=junny27/hello-k8s
+
+kubectl create svc k8s --type=NodePort --port=80:3000
 ```
 
-Find the **NodePort**, then access the service via:  
-```bash
-http://<worker-node-public-ip>:<NodePort>
+veify the service deployment ..
+
+To eidt and apply, output and  open vim , insert mode and :wq! to save, :q! to not save 
+```
+kubectl get deployment <deployment-name> -o yaml > deployment.yaml
+nano <deployment-name> 
+kubectl apply -f deployment.yaml
+
 ```
 
-✅ **Your Kubernetes cluster is live on AWS EC2!** 🚀
 
 ---
 
