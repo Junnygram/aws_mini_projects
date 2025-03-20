@@ -180,9 +180,9 @@ kubectl scale deployment nginx --replica=3
 
 ```
 
-Edit inbound rule and Find the **NodePort**, then access the service via:  
+Edit inbound rule and Find the **NodePort**, then access the service via:  # can also work with worker node ip  
 ```bash
-http://<master-node-public-ip>:<NodePort>
+http://<master-node-public-ip>:<NodePort>  # can also work with worker node ip
 ```
 
 This is the imperative way, now lets go through the declarative way
