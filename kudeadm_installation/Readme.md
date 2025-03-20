@@ -45,6 +45,11 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+chmod +x kubectl
+mkdir -p ~/.local/bin
+mv ./kubectl ~/.local/bin/kubectl
+
+# and then append (or prepend) ~/.local/bin to $PATH
 kubectl version --client
 ```
 
@@ -53,7 +58,7 @@ kubectl version --client
 sudo swapoff -a
 ```
 
-### Load Required Kernel Modules
+### Create the .conf file to load the modules at bootup
 ```bash
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
@@ -85,7 +90,10 @@ echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.i
 
 sudo apt-get update -y
 sudo apt-get install -y cri-o
-sudo systemctl enable --now crio
+
+sudo systemctl daemon-reload
+sudo systemctl enable crio --now
+sudo systemctl start crio.service
 ```
 
 ---
@@ -93,20 +101,18 @@ sudo systemctl enable --now crio
 ## Step 3: Install Kubernetes Components
 Run these commands **on all nodes**.
 
-### Add Kubernetes Repository & Install Components
+### Add Kubernetes Repository & Configure Kubelet to Use systemd Cgroup Driver
 ```bash
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 sudo apt-get update -y
-sudo apt-get install -y kubelet=1.29.0-* kubectl=1.29.0-* kubeadm=1.29.0-* jq
-sudo systemctl enable --now kubelet
-```
+sudo apt-get install -y kubelet="1.29.0-*" kubectl="1.29.0-*" kubeadm="1.29.0-*"
+sudo apt-get update -y
+sudo apt-get install -y jq
 
-### Configure Kubelet to Use systemd Cgroup Driver
-```bash
-sudo sed -i 's|KUBELET_KUBEADM_ARGS="|KUBELET_KUBEADM_ARGS="--cgroup-driver=systemd |g' /var/lib/kubelet/kubeadm-flags.env
-sudo systemctl restart kubelet
+sudo systemctl enable --now kubelet
+sudo systemctl start kubelet
 ```
 
 ---
@@ -132,8 +138,13 @@ Ensure **port 6443** is open in the security group to allow worker nodes to conn
 
 ---
 
-## Step 5: Join Worker Nodes
+## Step 5: Generate token on masternode for worker node to join
 Run these commands **only on `k8s-worker1` and `k8s-worker2`**.
+
+### Generate on master node
+```bash
+kubeadm token create --print-join-command
+```
 
 ### Reset Kubeadm (if rejoining)
 ```bash
@@ -153,6 +164,13 @@ kubectl get nodes
 ---
 
 ## Step 6: Deploy a Simple Node.js App
+
+```bash
+kubectl create deployment nginx --image=nginx  
+kubectl create svc nodeport nginx --tcp=80:80  
+
+```
+
 ```bash
 kubectl create deployment k8s-app --image=junny27/hello-k8s  
 kubectl expose deployment k8s-app --type=NodePort --port=80  
@@ -175,7 +193,26 @@ http://<worker-node-public-ip>:<NodePort>
 
 ## Step 7: Auto-Scale Worker Nodes with AWS Lambda
 
-### 1. Tag Worker Nodes for Auto-Shutdown
+### 1. Install aws cli on OS and Tag Worker Nodes for Auto-Shutdown
+```bash
+#!/bin/bash
+
+# Change directory to /tmp
+cd /tmp
+
+# Download the AWS CLI installation package
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# Unzip the downloaded package
+unzip awscliv2.zip
+
+# Run the AWS CLI installation script
+sudo ./aws/install
+
+# Verify the installation
+aws --version
+```
+
 ```bash
 aws ec2 create-tags --resources <Instance-ID-2> <Instance-ID-3> <Instance-ID-4> <Instance-ID-5> --tags Key=AutoShutdown,Value=True
 ```
