@@ -147,7 +147,7 @@ Ensure **port 6443** is open in the security group to allow worker nodes to conn
 ## Step 5: Generate token on masternode for worker node to join
 Run these commands **only on `k8s-worker1` and `k8s-worker2`**.
 
-### Generate on master node
+## Generate on master node
 ```bash
 kubeadm token create --print-join-command
 ```
