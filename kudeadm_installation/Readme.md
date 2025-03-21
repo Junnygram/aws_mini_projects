@@ -176,7 +176,7 @@ kubectl create deployment nginx --image=nginx
 kubectl create svc nodeport nginx --tcp=80:80  
 kubectl get svc
 kubectl describe deployment <deploymentname>
-kubectl scale deployment nginx --replica=3
+kubectl scale deployment nginx --replicas=3
 
 ```
 
