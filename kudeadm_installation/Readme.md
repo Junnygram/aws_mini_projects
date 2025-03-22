@@ -278,7 +278,7 @@ kubectl describe service k8s-app-service
 
 Now my container needs a variav[ble app_Name which has been declared in the image so we create a configmap 
 
-```bash
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -289,7 +289,7 @@ data:
 
 Now lets update the deployment kind so the variable cant be access in the depoloyment from the configmap 
 
-```bash
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -299,8 +299,7 @@ data:
 ```
 
 
-```bash
-
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -336,6 +335,7 @@ spec:
 ```bash
 kubectl exec -it <pod-name> -- env | grep APP_NAME
 ```
+
 ## Step 7: Auto-Scale Worker Nodes with AWS Lambda
 
 ### 1. Install aws cli on OS and Tag Worker Nodes for Auto-Shutdown
