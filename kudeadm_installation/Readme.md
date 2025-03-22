@@ -167,46 +167,175 @@ kubeadm join <master-node-ip>:6443 --token <token> --discovery-token-ca-cert-has
 kubectl get nodes
 ```
 
----
 
-## Step 6: Deploy a Simple Node.js App
+
+
+## Step 6: Deploy nginx App  
+
+### **Imperative Deployment**  
 
 ```bash
 kubectl create deployment nginx --image=nginx  
 kubectl create svc nodeport nginx --tcp=80:80  
-kubectl get svc
-kubectl describe deployment <deploymentname>
-kubectl scale deployment nginx --replicas=3
-
+kubectl get svc  
+kubectl describe deployment nginx  
+kubectl scale deployment nginx --replicas=3  
 ```
 
-Edit inbound rule and Find the **NodePort**, then access the service via:  # can also work with worker node ip  
-```bash
-http://<master-node-public-ip>:<NodePort>  # can also work with worker node ip
-```
+### **Accessing the Service**  
 
-This is the imperative way, now lets go through the declarative way
+1. Edit inbound rules to allow traffic on the **NodePort**.  
+2. Find the **NodePort** using:  
 
-```bash
-kubectl delete all --all
-kubectl create deployment k8s --image=junny27/hello-k8s
+   ```bash
+   kubectl get svc nginx
+   ```
 
-kubectl create svc k8s --type=NodePort --port=80:3000
-```
+3. Access the service using:  
 
-veify the service deployment ..
+   ```bash
+   http://<master-node-public-ip>:<NodePort>
+   ```
 
-To eidt and apply, output and  open vim , insert mode and :wq! to save, :q! to not save 
-```
-kubectl get deployment <deployment-name> -o yaml > deployment.yaml
-nano <deployment-name> 
-kubectl apply -f deployment.yaml
-
-```
-
+   - You can also use the worker node's IP.
 
 ---
 
+
+## **Declarative YAML Approach**  
+
+### **Step 1: Create Deployment YAML**  
+
+Create a file named `k8s-deploy.yml`:  
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deployment
+  labels:
+    app: k8s-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: k8s-app
+  template:
+    metadata:
+      labels:
+        app: k8s-app
+    spec:
+      containers:
+        - name: k8s-app
+          image: junny27/hello-k8s
+          ports:
+            - containerPort: 3000
+```
+
+---
+
+### **Step 2: Create Service YAML**  
+
+Create a file named `k8s-svc.yml`:  
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-app-service
+spec:
+  selector:
+    app: k8s-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: NodePort
+```
+
+---
+
+### **Step 3: Apply the YAML Files**  
+
+```bash
+kubectl apply -f k8s-deploy.yml
+kubectl apply -f k8s-svc.yml
+```
+
+---
+
+## **Checking Resources**  
+
+```bash
+kubectl get pods -o wide
+kubectl get svc
+kubectl get nodes
+kubectl describe service k8s-app-service
+```
+
+---
+
+
+Now my container needs a variav[ble app_Name which has been declared in the image so we create a configmap 
+
+```bash
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  APP_NAME: "hello-k8s-app"
+```
+
+Now lets update the deployment kind so the variable cant be access in the depoloyment from the configmap 
+
+```bash
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  APP_NAME: "hello-k8s-app"
+```
+
+
+```bash
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deployment
+  labels:
+    app: k8s-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: k8s-app
+  template:
+    metadata:
+      labels:
+        app: k8s-app
+    spec:
+      containers:
+        - name: k8s-app
+          image: junny27/hello-k8s
+          ports:
+            - containerPort: 3000
+          env:
+            - name: APP_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: APP_NAME
+
+```
+
+## Verify
+
+```bash
+kubectl exec -it <pod-name> -- env | grep APP_NAME
+```
 ## Step 7: Auto-Scale Worker Nodes with AWS Lambda
 
 ### 1. Install aws cli on OS and Tag Worker Nodes for Auto-Shutdown
